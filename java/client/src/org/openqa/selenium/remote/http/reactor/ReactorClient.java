@@ -21,6 +21,7 @@ import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableMap;
 
 import org.openqa.selenium.internal.Require;
+import org.openqa.selenium.remote.http.AddSeleniumUserAgent;
 import org.openqa.selenium.remote.http.ClientConfig;
 import org.openqa.selenium.remote.http.HttpClient;
 import org.openqa.selenium.remote.http.HttpClientName;
@@ -71,8 +72,14 @@ public class ReactorClient implements HttpClient {
   @Override
   public HttpResponse execute(HttpRequest request) {
     Tuple2<InputStream, HttpResponse> result = httpClient
-        .headers(h -> request.getHeaderNames().forEach(
-            name -> request.getHeaders(name).forEach(value -> h.set(name, value))))
+        .headers(h -> {
+                   request.getHeaderNames().forEach(
+                       name -> request.getHeaders(name).forEach(value -> h.set(name, value)));
+                   if (request.getHeader("User-Agent") == null) {
+                     h.set("User-Agent", AddSeleniumUserAgent.USER_AGENT);
+                   }
+                 }
+          )
         .request(methodMap.get(request.getMethod()))
         .uri(request.getUri())
         .send((r, out) -> out.send(fromInputStream(request.getContent().get())))
